@@ -1,6 +1,4 @@
-
-clear;
-close all
+snr= 10:1:20; % in db
 
 WRITE_PNG_FILES         = 0;           % Enable writing plots to PNG
 
@@ -116,10 +114,12 @@ rx_vec_air_1B = [rx_vec_air_1B, zeros(1,100)];
 rx_vec_air_1C = [rx_vec_air_1C, zeros(1,100)];
 rx_vec_air_1D = [rx_vec_air_1D, zeros(1,100)];
 
-rx_vec_air_1A = rx_vec_air_1A + 1e-2*complex(randn(1,length(rx_vec_air_1A)), randn(1,length(rx_vec_air_1A)));
-rx_vec_air_1B = rx_vec_air_1B + 1e-2*complex(randn(1,length(rx_vec_air_1B)), randn(1,length(rx_vec_air_1B)));
-rx_vec_air_1C = rx_vec_air_1C + 1e-2*complex(randn(1,length(rx_vec_air_1C)), randn(1,length(rx_vec_air_1C)));
-rx_vec_air_1D = rx_vec_air_1D + 1e-2*complex(randn(1,length(rx_vec_air_1D)), randn(1,length(rx_vec_air_1D)));
+noise_power = var(rx_vec_air_1A) * 10 ^(-snr/20);
+
+rx_vec_air_1A = rx_vec_air_1A + noise_power*complex(randn(1,length(rx_vec_air_1A)), randn(1,length(rx_vec_air_1A)));
+rx_vec_air_1B = rx_vec_air_1B + noise_power*complex(randn(1,length(rx_vec_air_1B)), randn(1,length(rx_vec_air_1B)));
+rx_vec_air_1C = rx_vec_air_1C + noise_power*complex(randn(1,length(rx_vec_air_1C)), randn(1,length(rx_vec_air_1C)));
+rx_vec_air_1D = rx_vec_air_1D + noise_power*complex(randn(1,length(rx_vec_air_1D)), randn(1,length(rx_vec_air_1D)));
 
 rx_vec_dec_1A=generate_downsample_rx(rx_vec_air_1A,INTERP_RATE, interp_filt2);
 rx_vec_dec_1B=generate_downsample_rx(rx_vec_air_1B,INTERP_RATE, interp_filt2);
@@ -133,8 +133,8 @@ rx_vec_air_2B = tx_vec_air_B + .5 * tx_vec_air_A;
 rx_vec_air_2A = [rx_vec_air_2A, zeros(1,100)];
 rx_vec_air_2B = [rx_vec_air_2B, zeros(1,100)];
 
-rx_vec_air_2A = rx_vec_air_2A + 1e-2*complex(randn(1,length(rx_vec_air_2A)), randn(1,length(rx_vec_air_2A)));
-rx_vec_air_2B = rx_vec_air_2B + 1e-2*complex(randn(1,length(rx_vec_air_2B)), randn(1,length(rx_vec_air_2B)));
+rx_vec_air_2A = rx_vec_air_2A + noise_power*complex(randn(1,length(rx_vec_air_2A)), randn(1,length(rx_vec_air_2A)));
+rx_vec_air_2B = rx_vec_air_2B + noise_power*complex(randn(1,length(rx_vec_air_2B)), randn(1,length(rx_vec_air_2B)));
 
 raw_rx_dec_A=generate_downsample_rx(rx_vec_air_2A,INTERP_RATE, interp_filt2);
 raw_rx_dec_B=generate_downsample_rx(rx_vec_air_2B,INTERP_RATE, interp_filt2);
