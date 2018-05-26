@@ -31,7 +31,7 @@ TX_NUM_SAMPS = length(tx_vec_air_A);
 % to enable CFO make CFO_FLAG=1
 
 if(CFO_FLAG)
-    tx_vec_air_A = tx_vec_air_A .* exp(-1i*2*pi*1e-4*[0:length(tx_vec_air)-1]);
+    tx_vec_air_A = tx_vec_air_A .* exp(-1i*2*pi*1e-4*[0:length(tx_vec_air_A)-1]);
 end
 
 end
