@@ -102,7 +102,7 @@ tx_syms_space = [tx_syms_A; tx_syms_B];
 tx_syms = reshape(tx_syms_space, 1, length(tx_syms_A)*2);
 
 
-% MIMO air channel case 2 (1X4 MIMO)
+%% MIMO air channel case 2 (1X4 MIMO)
 rx_vec_air_1A = tx_vec_air_A;
 rx_vec_air_1B= .5 * tx_vec_air_A;
 rx_vec_air_1C = tx_vec_air_A;
@@ -126,7 +126,7 @@ rx_vec_dec_1B=generate_downsample_rx(rx_vec_air_1B,INTERP_RATE, interp_filt2);
 rx_vec_dec_1C=generate_downsample_rx(rx_vec_air_1C,INTERP_RATE, interp_filt2);
 rx_vec_dec_1D=generate_downsample_rx(rx_vec_air_1D,INTERP_RATE, interp_filt2);
 
-% MIMO air channel case 3 (2X2 MIMO)
+%% MIMO air channel case 3 (2X2 MIMO, 1 spatial streams)
 rx_vec_air_2A = tx_vec_air_A + .5 * tx_vec_air_B;
 rx_vec_air_2B = tx_vec_air_B + .5 * tx_vec_air_A;
 
@@ -136,6 +136,43 @@ rx_vec_air_2B = [rx_vec_air_2B, zeros(1,100)];
 rx_vec_air_2A = rx_vec_air_2A + noise_power*complex(randn(1,length(rx_vec_air_2A)), randn(1,length(rx_vec_air_2A)));
 rx_vec_air_2B = rx_vec_air_2B + noise_power*complex(randn(1,length(rx_vec_air_2B)), randn(1,length(rx_vec_air_2B)));
 
-raw_rx_dec_A=generate_downsample_rx(rx_vec_air_2A,INTERP_RATE, interp_filt2);
-raw_rx_dec_B=generate_downsample_rx(rx_vec_air_2B,INTERP_RATE, interp_filt2);
+raw_rx_dec_2A=generate_downsample_rx(rx_vec_air_2A,INTERP_RATE, interp_filt2);
+raw_rx_dec_2B=generate_downsample_rx(rx_vec_air_2B,INTERP_RATE, interp_filt2);
 
+%% MIMO air channel case 4 (2X2 MIMO, 2 spatial streams)
+tx_data_A_bits = randi(2, 1, number_of_bits) - 1;   % Stream A bits
+tx_data_B_bits = randi(2, 1, number_of_bits) - 1;   % Stream B bits 
+
+
+
+[tx_data_a, tx_payload_vec_A, tx_syms_A] = generate_ofdm_tx( ...
+    tx_data_A_bits, pilots_A, MOD_ORDER, number_of_bits, N_SC, CP_LEN, ...
+    SC_IND_DATA, SC_IND_PILOTS, N_OFDM_SYMS, trellis_end_length);
+
+[tx_data_b, tx_payload_vec_B, tx_syms_B] = generate_ofdm_tx( ...
+    tx_data_B_bits, pilots_B, MOD_ORDER, number_of_bits, N_SC, CP_LEN, ...
+    SC_IND_DATA, SC_IND_PILOTS, N_OFDM_SYMS, trellis_end_length);
+
+tx_vec_air_A = generate_mimo(preamble_A, tx_payload_vec_A, INTERP_RATE, TX_SCALE, CFO_FLAG, interp_filt2);
+tx_vec_air_B = generate_mimo(preamble_B, tx_payload_vec_B, INTERP_RATE, TX_SCALE, CFO_FLAG, interp_filt2);
+
+% Channel matrix:
+% [y1]   [h11 h12] [xA] + [n1]
+% [y2] = [h21 h22] [xB]   [n2]
+
+h11 = 0.3;
+h12 = 0.5;
+h21 = 0.7;
+h22 = 1.0;
+
+rx_vec_air_2A = h11*tx_vec_air_A + h12*tx_vec_air_B;   % Rx antenna 1
+rx_vec_air_2B = h21*tx_vec_air_A + h22*tx_vec_air_B;   % Rx antenna 2
+
+noise_amp_A = sqrt(var(rx_vec_air_2A)) * 10^(-snr/20);
+noise_amp_B = sqrt(var(rx_vec_air_2B)) * 10^(-snr/20);
+
+rx_vec_air_2A = rx_vec_air_2A + noise_amp_A * complex(randn(1,length(rx_vec_air_2A)), randn(1,length(rx_vec_air_2A)));
+rx_vec_air_2B = rx_vec_air_2B + noise_amp_B * complex(randn(1,length(rx_vec_air_2B)), randn(1,length(rx_vec_air_2B)));
+
+raw_rx_dec_3A = generate_downsample_rx(rx_vec_air_2A, INTERP_RATE, interp_filt2);
+raw_rx_dec_3B = generate_downsample_rx(rx_vec_air_2B, INTERP_RATE, interp_filt2);
