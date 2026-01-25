@@ -176,9 +176,9 @@ rx_vec_air_2B = rx_vec_air_2B + noise_amp_B * complex(randn(1,length(rx_vec_air_
 raw_rx_dec_3A = generate_downsample_rx(rx_vec_air_2A, INTERP_RATE, interp_filt2);
 raw_rx_dec_3B = generate_downsample_rx(rx_vec_air_2B, INTERP_RATE, interp_filt2);
 %% Multipath channel
-L = 4;                            % number of taps
-pwr = exp(-(0:L-1));              % power delay profile
-pwr = pwr / sum(pwr);             % normalize total power
+L = 4;                            %number of taps
+pwr = exp(-(0:L-1));              %power delay profile
+pwr = pwr / sum(pwr);             %normalize total power
 
 % Independent complex Gaussian taps per link 
 h11 = (randn(L,1)+1i*randn(L,1)).' .* sqrt(pwr/2);
