@@ -1,5 +1,5 @@
-snr= 10:1:20; % in db
-
+clc
+snr= 10; %10:1:20; % in db
 WRITE_PNG_FILES         = 0;           % Enable writing plots to PNG
 
 %% Params:
@@ -114,12 +114,12 @@ rx_vec_air_1B = [rx_vec_air_1B, zeros(1,100)];
 rx_vec_air_1C = [rx_vec_air_1C, zeros(1,100)];
 rx_vec_air_1D = [rx_vec_air_1D, zeros(1,100)];
 
-noise_power = var(rx_vec_air_1A) * 10 ^(-snr/20);
+noise_power = var(rx_vec_air_1A) * 10.^(-snr/20);
 
-rx_vec_air_1A = rx_vec_air_1A + noise_power*complex(randn(1,length(rx_vec_air_1A)), randn(1,length(rx_vec_air_1A)));
-rx_vec_air_1B = rx_vec_air_1B + noise_power*complex(randn(1,length(rx_vec_air_1B)), randn(1,length(rx_vec_air_1B)));
-rx_vec_air_1C = rx_vec_air_1C + noise_power*complex(randn(1,length(rx_vec_air_1C)), randn(1,length(rx_vec_air_1C)));
-rx_vec_air_1D = rx_vec_air_1D + noise_power*complex(randn(1,length(rx_vec_air_1D)), randn(1,length(rx_vec_air_1D)));
+rx_vec_air_1A = rx_vec_air_1A + noise_power.*complex(randn(1,length(rx_vec_air_1A)), randn(1,length(rx_vec_air_1A)));
+rx_vec_air_1B = rx_vec_air_1B + noise_power.*complex(randn(1,length(rx_vec_air_1B)), randn(1,length(rx_vec_air_1B)));
+rx_vec_air_1C = rx_vec_air_1C + noise_power.*complex(randn(1,length(rx_vec_air_1C)), randn(1,length(rx_vec_air_1C)));
+rx_vec_air_1D = rx_vec_air_1D + noise_power.*complex(randn(1,length(rx_vec_air_1D)), randn(1,length(rx_vec_air_1D)));
 
 rx_vec_dec_1A=generate_downsample_rx(rx_vec_air_1A,INTERP_RATE, interp_filt2);
 rx_vec_dec_1B=generate_downsample_rx(rx_vec_air_1B,INTERP_RATE, interp_filt2);
@@ -156,10 +156,9 @@ tx_data_B_bits = randi(2, 1, number_of_bits) - 1;   % Stream B bits
 tx_vec_air_A = generate_mimo(preamble_A, tx_payload_vec_A, INTERP_RATE, TX_SCALE, CFO_FLAG, interp_filt2);
 tx_vec_air_B = generate_mimo(preamble_B, tx_payload_vec_B, INTERP_RATE, TX_SCALE, CFO_FLAG, interp_filt2);
 
-% Channel matrix:
+%% simple channel (scalar multiplication)
 % [y1]   [h11 h12] [xA] + [n1]
 % [y2] = [h21 h22] [xB]   [n2]
-
 h11 = 0.3;
 h12 = 0.5;
 h21 = 0.7;
@@ -173,6 +172,32 @@ noise_amp_B = sqrt(var(rx_vec_air_2B)) * 10^(-snr/20);
 
 rx_vec_air_2A = rx_vec_air_2A + noise_amp_A * complex(randn(1,length(rx_vec_air_2A)), randn(1,length(rx_vec_air_2A)));
 rx_vec_air_2B = rx_vec_air_2B + noise_amp_B * complex(randn(1,length(rx_vec_air_2B)), randn(1,length(rx_vec_air_2B)));
+
+raw_rx_dec_3A = generate_downsample_rx(rx_vec_air_2A, INTERP_RATE, interp_filt2);
+raw_rx_dec_3B = generate_downsample_rx(rx_vec_air_2B, INTERP_RATE, interp_filt2);
+%% Multipath channel
+L = 4;                            % number of taps
+pwr = exp(-(0:L-1));              % power delay profile
+pwr = pwr / sum(pwr);             % normalize total power
+
+% Independent complex Gaussian taps per link 
+h11 = (randn(L,1)+1i*randn(L,1)).' .* sqrt(pwr/2);
+h12 = (randn(L,1)+1i*randn(L,1)).' .* sqrt(pwr/2);
+h21 = (randn(L,1)+1i*randn(L,1)).' .* sqrt(pwr/2);
+h22 = (randn(L,1)+1i*randn(L,1)).' .* sqrt(pwr/2);
+
+% Apply multipath (FIR filtering) 
+rx_vec_air_2A = filter(h11, 1, tx_vec_air_A) + filter(h12, 1, tx_vec_air_B);
+rx_vec_air_2B = filter(h21, 1, tx_vec_air_A) + filter(h22, 1, tx_vec_air_B);
+
+energy = abs([rx_vec_air_2A; rx_vec_air_2B]).^2;
+sigPow = mean(energy(:));         
+noisePow = sigPow * 10^(-snr/10);       
+n1 = sqrt(noisePow/2) * (randn(size(rx_vec_air_2A)) + 1i*randn(size(rx_vec_air_2A)));
+n2 = sqrt(noisePow/2) * (randn(size(rx_vec_air_2B)) + 1i*randn(size(rx_vec_air_2B)));
+
+rx_vec_air_2A = rx_vec_air_2A + n1;
+rx_vec_air_2B = rx_vec_air_2B + n2;
 
 raw_rx_dec_3A = generate_downsample_rx(rx_vec_air_2A, INTERP_RATE, interp_filt2);
 raw_rx_dec_3B = generate_downsample_rx(rx_vec_air_2B, INTERP_RATE, interp_filt2);
